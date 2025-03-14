@@ -3,7 +3,7 @@ name: Windows CI Pipeline for Zomato Project
 on:
   push:
     branches:
-      - feature-*  # Runs on any feature branch like feature-zomato-test
+      - feature-*  # Runs on any feature branch
 
 jobs:
   build:
@@ -24,10 +24,11 @@ jobs:
       - name: Install NPM Dependencies
         run: npm install
 
-      - name: Start SonarQube (Optional)
+      - name: Download & Extract SonarQube Scanner
         run: |
-          Start-Process -FilePath "C:\Dev-tools\sonarqube-25.2.0.102705\bin\windows-x86-64\StartSonar.bat"
-          Start-Sleep -s 30  # Wait for SonarQube to start
+          Invoke-WebRequest -Uri "https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-5.0.1.3006-windows.zip" -OutFile "sonar.zip"
+          Expand-Archive -Path "sonar.zip" -DestinationPath "C:\sonar-scanner"
+          echo "C:\sonar-scanner\sonar-scanner-5.0.1.3006-windows\bin" | Out-File -Append -Encoding ascii $env:GITHUB_PATH
 
       - name: SonarQube Analysis
         env:
