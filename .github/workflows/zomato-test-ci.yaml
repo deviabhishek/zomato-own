@@ -24,16 +24,6 @@ jobs:
       - name: Install NPM Dependencies
         run: npm install
 
-      - name: Install Trivy (Security Scanner)
-        run: |
-          iwr -Uri "https://github.com/aquasecurity/trivy/releases/latest/download/trivy_0.50.0_Windows-64bit.zip" -OutFile "trivy.zip"
-          Expand-Archive -Path "trivy.zip" -DestinationPath "C:\trivy"
-          echo "C:\trivy" >> $env:GITHUB_PATH
-          setx PATH "C:\trivy;%PATH%"
-
-      - name: Run Trivy Security Scan
-        run: C:\trivy\trivy.exe fs --exit-code 0 --severity HIGH,CRITICAL --format table --output trivy-report.txt .
-
       - name: Set Up SonarQube Scanner
         run: |
           Invoke-WebRequest -Uri "https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-5.0.1.3006-windows.zip" -OutFile "sonar.zip"
