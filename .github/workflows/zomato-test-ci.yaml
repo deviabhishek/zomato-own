@@ -3,7 +3,7 @@ name: Windows CI Pipeline for Zomato Project
 on:
   push:
     branches:
-      - feature/**  # Runs on any feature branch
+      - feature-*  # Runs on any feature branch like feature-zomato-test
 
 jobs:
   build:
@@ -28,7 +28,8 @@ jobs:
         run: |
           iwr -Uri "https://github.com/aquasecurity/trivy/releases/latest/download/trivy_0.50.0_Windows-64bit.zip" -OutFile "trivy.zip"
           Expand-Archive -Path "trivy.zip" -DestinationPath "C:\trivy"
-          echo "C:\trivy" | Out-File -Append -Encoding ascii $env:GITHUB_PATH
+          echo "C:\trivy" >> $env:GITHUB_PATH
+          setx PATH "C:\trivy;%PATH%"
 
       - name: Run Trivy Security Scan
         run: C:\trivy\trivy.exe fs --exit-code 0 --severity HIGH,CRITICAL --format table --output trivy-report.txt .
@@ -37,17 +38,28 @@ jobs:
         run: |
           Invoke-WebRequest -Uri "https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-5.0.1.3006-windows.zip" -OutFile "sonar.zip"
           Expand-Archive -Path "sonar.zip" -DestinationPath "C:\sonar-scanner"
-          echo "C:\sonar-scanner\sonar-scanner-5.0.1.3006-windows\bin" | Out-File -Append -Encoding ascii $env:GITHUB_PATH
+          echo "C:\sonar-scanner\sonar-scanner-5.0.1.3006-windows\bin" >> $env:GITHUB_PATH
+          setx PATH "C:\sonar-scanner\sonar-scanner-5.0.1.3006-windows\bin;%PATH%"
+
+      - name: Start SonarQube Server (Optional)
+        run: |
+          docker run -d --name sonar -p 9000:9000 sonarqube:lts
+          Start-Sleep -s 30  # Wait for SonarQube to start
 
       - name: SonarQube Analysis
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: |
-          sonar-scanner.bat ^
+          C:\sonar-scanner\sonar-scanner.bat ^
             -Dsonar.projectKey=zomato ^
             -Dsonar.projectName=zomato ^
             -Dsonar.host.url=http://localhost:9000 ^
             -Dsonar.token=%SONAR_TOKEN%
+
+      - name: Set Up Docker
+        run: |
+          echo "Enabling Docker"
+          Start-Service docker
 
       - name: Log in to Docker Hub
         run: echo ${{ secrets.DOCKER_HUB_PASSWORD }} | docker login -u ${{ secrets.DOCKER_HUB_USERNAME }} --password-stdin
@@ -57,4 +69,3 @@ jobs:
 
       - name: Push Docker Image to Docker Hub
         run: docker push $env:DOCKER_IMAGE
-      - name: show it 
