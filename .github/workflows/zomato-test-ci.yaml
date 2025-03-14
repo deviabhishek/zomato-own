@@ -24,23 +24,16 @@ jobs:
       - name: Install NPM Dependencies
         run: npm install
 
-      - name: Set Up SonarQube Scanner
+      - name: Start SonarQube (Optional)
         run: |
-          Invoke-WebRequest -Uri "https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-5.0.1.3006-windows.zip" -OutFile "sonar.zip"
-          Expand-Archive -Path "sonar.zip" -DestinationPath "C:\sonar-scanner"
-          echo "C:\sonar-scanner\sonar-scanner-5.0.1.3006-windows\bin" >> $env:GITHUB_PATH
-          setx PATH "C:\sonar-scanner\sonar-scanner-5.0.1.3006-windows\bin;%PATH%"
-
-      - name: Start SonarQube Server (Optional)
-        run: |
-          docker run -d --name sonar -p 9000:9000 sonarqube:lts
+          Start-Process -FilePath "C:\Dev-tools\sonarqube-25.2.0.102705\bin\windows-x86-64\StartSonar.bat"
           Start-Sleep -s 30  # Wait for SonarQube to start
 
       - name: SonarQube Analysis
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: |
-          C:\sonar-scanner\sonar-scanner.bat ^
+          sonar-scanner.bat ^
             -Dsonar.projectKey=zomato ^
             -Dsonar.projectName=zomato ^
             -Dsonar.host.url=http://localhost:9000 ^
